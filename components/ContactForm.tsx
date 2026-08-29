@@ -18,6 +18,13 @@ export default function ContactForm() {
     const form = e.currentTarget;
     const data = Object.fromEntries(new FormData(form).entries());
 
+    const email = String(data.email ?? "").trim();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setErrorMsg("Enter a valid email, e.g. you@example.com — it must include an @ and a domain.");
+      setStatus("error");
+      return;
+    }
+
     setStatus("submitting");
     setErrorMsg("");
 
@@ -89,6 +96,7 @@ export default function ContactForm() {
                 pattern="[^0-9]*"
                 title="Name cannot contain numbers."
                 sanitize={(v) => v.replace(/[0-9]/g, "")}
+                sanitizeError="Numbers aren't allowed in the name field."
               />
               <Field label="Purpose" name="purpose" placeholder="Why are you reaching out?" required />
               <Field
@@ -101,6 +109,7 @@ export default function ContactForm() {
                 pattern="[0-9+()\-\s]+"
                 title="Phone number cannot contain letters."
                 sanitize={(v) => v.replace(/[^0-9+()\-\s]/g, "")}
+                sanitizeError="Letters aren't allowed in the phone field."
               />
               <Field
                 label="Email"
@@ -110,6 +119,7 @@ export default function ContactForm() {
                 required
                 pattern="^\S+@\S+\.\S+$"
                 title="Enter a valid email address, e.g. you@example.com"
+                validateOnBlur={(v) => (v && !/^\S+@\S+\.\S+$/.test(v) ? "Enter a valid email, e.g. you@example.com — it must include an @ and a domain." : null)}
               />
             </div>
             <div>
@@ -164,6 +174,8 @@ function Field({
   pattern,
   title,
   sanitize,
+  sanitizeError,
+  validateOnBlur,
 }: {
   label: string;
   name: string;
@@ -174,7 +186,11 @@ function Field({
   pattern?: string;
   title?: string;
   sanitize?: (value: string) => string;
+  sanitizeError?: string;
+  validateOnBlur?: (value: string) => string | null;
 }) {
+  const [error, setError] = useState<string | null>(null);
+
   return (
     <div>
       <label htmlFor={name} className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-pitch-sand/70">
@@ -189,16 +205,31 @@ function Field({
         pattern={pattern}
         title={title}
         placeholder={placeholder}
-        onInput={
-          sanitize
-            ? (e) => {
-                const input = e.currentTarget;
-                input.value = sanitize(input.value);
-              }
-            : undefined
-        }
-        className="w-full rounded-lg border border-white/15 bg-black/30 px-3.5 py-2.5 text-sm text-foreground placeholder:text-pitch-sand/40 outline-none focus:border-scoreboard-amber"
+        aria-invalid={!!error}
+        onInput={(e) => {
+          const input = e.currentTarget;
+          if (sanitize) {
+            const cleaned = sanitize(input.value);
+            if (cleaned !== input.value) {
+              input.value = cleaned;
+              setError(sanitizeError ?? null);
+              return;
+            }
+          }
+          if (error) setError(null);
+        }}
+        onBlur={(e) => {
+          if (validateOnBlur) setError(validateOnBlur(e.currentTarget.value.trim()));
+        }}
+        className={`w-full rounded-lg border bg-black/30 px-3.5 py-2.5 text-sm text-foreground placeholder:text-pitch-sand/40 outline-none focus:border-scoreboard-amber ${
+          error ? "border-red-500/60" : "border-white/15"
+        }`}
       />
+      {error && (
+        <p role="alert" className="mt-1.5 font-mono text-[11px] text-red-300">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

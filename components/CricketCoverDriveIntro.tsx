@@ -8,8 +8,6 @@ import { useSound } from "./providers/SoundProvider";
 
 type Phase = "idle" | "delivery" | "shot" | "rocket" | "shatter";
 
-const SESSION_KEY = "cricket-portfolio-intro-seen";
-
 // Where the ball is "pitched" from (bowler's end, off to the top-left) and
 // where it meets the bat. Tune IMPACT_POINT to match the bat's position
 // once the real batsman.png cutout is in place.
@@ -93,25 +91,10 @@ const swooshVariants: Variants = {
 
 export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [skip, setSkip] = useState<boolean | null>(null);
   const shakeControls = useAnimationControls();
   const ballControls = useAnimationControls();
   const { play, muted, toggleMute } = useSound();
   const triggeredRef = useRef(false);
-
-  const finish = useCallback(() => {
-    window.sessionStorage.setItem(SESSION_KEY, "true");
-    onComplete();
-  }, [onComplete]);
-
-  useEffect(() => {
-    const seen = window.sessionStorage.getItem(SESSION_KEY) === "true";
-    // sessionStorage only exists client-side, so whether to skip the intro
-    // at all can only be decided after mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSkip(seen);
-    if (seen) onComplete();
-  }, [onComplete]);
 
   // Sequenced imperatively (rather than via reactive `animate={phase}` +
   // onAnimationComplete chaining) because each leg of the delivery must
@@ -145,7 +128,6 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
   }, [play, ballControls, shakeControls]);
 
   useEffect(() => {
-    if (skip !== false) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Space") {
         e.preventDefault();
@@ -154,10 +136,7 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [bowl, skip]);
-
-  if (skip === null) return <div className="fixed inset-0 z-50 bg-stadium-night" />;
-  if (skip) return null;
+  }, [bowl]);
 
   return (
     <motion.div
@@ -209,7 +188,7 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
         <ShatterCanvas
           originX={typeof window !== "undefined" ? window.innerWidth / 2 : 0}
           originY={typeof window !== "undefined" ? window.innerHeight / 2 : 0}
-          onDone={finish}
+          onDone={onComplete}
         />
       )}
 

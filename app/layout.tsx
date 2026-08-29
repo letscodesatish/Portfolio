@@ -26,7 +26,7 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "The Dressing Room | Cricket-Themed Developer Portfolio",
+  title: "SKS",
   description:
     "An interactive, cricket-themed portfolio — step into the dressing room to explore projects, skills, and career innings.",
 };

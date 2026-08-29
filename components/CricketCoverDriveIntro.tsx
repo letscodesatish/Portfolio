@@ -39,13 +39,16 @@ const ballVariants: Variants = {
     transition: { duration: 0.6, ease: [0.55, 0, 1, 0.45] },
   },
   shot: {
-    top: IMPACT_POINT.top,
-    left: IMPACT_POINT.left,
+    // Small directional kick away from the bat, toward where the "rocket"
+    // leg launches from — makes the ball visibly react to being struck
+    // instead of just swelling in place.
+    top: "54%",
+    left: "70%",
     x: "-50%",
     y: "-50%",
     scale: 1.08,
     rotate: 660,
-    transition: { duration: 0.2, ease: "easeOut" },
+    transition: { duration: 0.22, ease: "easeOut" },
   },
   rocket: {
     top: "50%",
@@ -64,9 +67,13 @@ const batsmanVariants: Variants = {
   idle: { rotate: 0, x: 0 },
   delivery: { rotate: 0, x: 0 },
   shot: {
-    rotate: [-5, 15, 6],
-    x: [0, 8, 2],
-    transition: { duration: 0.2, times: [0, 0.65, 1], ease: "easeOut" },
+    // A real swing: wind up slightly away from the ball, then whip through
+    // and connect right as the ball's own "shot" reaction fires (both use
+    // the same duration so the two stay in sync), then settle into the
+    // follow-through.
+    rotate: [-10, 26, 8],
+    x: [-3, 20, 4],
+    transition: { duration: 0.22, times: [0, 0.7, 1], ease: "easeOut" },
   },
   rocket: { rotate: 6, x: 2 },
   shatter: { rotate: 6, x: 2, opacity: 0, transition: { duration: 0.15 } },

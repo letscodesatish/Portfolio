@@ -81,10 +81,36 @@ export default function ContactForm() {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Name" name="name" placeholder="Your name" required />
+              <Field
+                label="Name"
+                name="name"
+                placeholder="Your name"
+                required
+                pattern="[^0-9]*"
+                title="Name cannot contain numbers."
+                sanitize={(v) => v.replace(/[0-9]/g, "")}
+              />
               <Field label="Purpose" name="purpose" placeholder="Why are you reaching out?" required />
-              <Field label="Phone No." name="phone" type="tel" placeholder="+91 00000 00000" required />
-              <Field label="Email" name="email" type="email" placeholder="you@example.com" required />
+              <Field
+                label="Phone No."
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                placeholder="+91 00000 00000"
+                required
+                pattern="[0-9+()\-\s]+"
+                title="Phone number cannot contain letters."
+                sanitize={(v) => v.replace(/[^0-9+()\-\s]/g, "")}
+              />
+              <Field
+                label="Email"
+                name="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                pattern="^\S+@\S+\.\S+$"
+                title="Enter a valid email address, e.g. you@example.com"
+              />
             </div>
             <div>
               <label htmlFor="message" className="mb-1.5 block font-mono text-xs uppercase tracking-wider text-pitch-sand/70">
@@ -132,14 +158,22 @@ function Field({
   label,
   name,
   type = "text",
+  inputMode,
   placeholder,
   required,
+  pattern,
+  title,
+  sanitize,
 }: {
   label: string;
   name: string;
   type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   placeholder?: string;
   required?: boolean;
+  pattern?: string;
+  title?: string;
+  sanitize?: (value: string) => string;
 }) {
   return (
     <div>
@@ -150,8 +184,19 @@ function Field({
         id={name}
         name={name}
         type={type}
+        inputMode={inputMode}
         required={required}
+        pattern={pattern}
+        title={title}
         placeholder={placeholder}
+        onInput={
+          sanitize
+            ? (e) => {
+                const input = e.currentTarget;
+                input.value = sanitize(input.value);
+              }
+            : undefined
+        }
         className="w-full rounded-lg border border-white/15 bg-black/30 px-3.5 py-2.5 text-sm text-foreground placeholder:text-pitch-sand/40 outline-none focus:border-scoreboard-amber"
       />
     </div>

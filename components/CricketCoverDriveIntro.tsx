@@ -163,11 +163,11 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
       aria-label={phase === "idle" ? "Play the cover drive to enter the site" : undefined}
     >
       {/* Stadium backdrop. A CSS background (rather than <Image>) degrades
-          gracefully to the gradient below if stadium-bg.png isn't in place
+          gracefully to the gradient below if stadium.png isn't in place
           yet, instead of showing a broken-image icon. */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/stadium-bg.png')" }}
+        style={{ backgroundImage: "url('/images/core/stadium.png')" }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/40 to-stadium-night" />
       <div className="absolute inset-0 bg-floodlight-radial animate-flicker" />
@@ -187,7 +187,7 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
       <motion.div
         className="absolute z-20 h-11 w-11 rounded-full sm:h-14 sm:w-14"
         style={{
-          backgroundImage: "url('/images/cricket-ball.png')",
+          backgroundImage: "url('/images/core/cricket-ball.png')",
           backgroundSize: "cover",
           backgroundColor: "#a01f22",
           boxShadow: "0 0 30px rgba(160,31,34,0.55)",
@@ -250,7 +250,7 @@ function BatsmanRig({
             CSS background degrades gracefully if batsman.png isn't in place yet. */}
         <div
           className="absolute inset-0 bg-contain bg-bottom bg-no-repeat"
-          style={{ backgroundImage: "url('/images/batsman.png')" }}
+          style={{ backgroundImage: "url('/images/core/batsman.png')" }}
         />
 
         {/* Bat swing swoosh trail */}

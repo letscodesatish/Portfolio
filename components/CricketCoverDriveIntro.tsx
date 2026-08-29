@@ -8,11 +8,52 @@ import { useSound } from "./providers/SoundProvider";
 
 type Phase = "idle" | "delivery" | "shot" | "rocket" | "shatter";
 
-// Where the ball is "pitched" from (bowler's end, off to the top-left) and
-// where it meets the bat. Tune IMPACT_POINT to match the bat's position
-// once the real batsman.png cutout is in place.
+// Where the ball is "pitched" from (bowler's end, off to the top-left).
 const BOWLER_START = { top: "6%", left: "8%" };
-const IMPACT_POINT = { top: "58%", left: "75%" };
+
+// The bat-impact point isn't hardcoded as a viewport percentage — the
+// BatsmanRig box's height and right-offset change between the mobile and
+// sm+ breakpoints (see its className), and since batsman.png is a portrait
+// photo (941x1672), `background-size: contain` letterboxes it on a
+// *different axis* depending on the box's own aspect ratio: horizontal
+// gaps on the wide desktop box, a vertical gap on the narrow mobile box. A
+// marker positioned as a plain percentage of the outer box ignores that and
+// drifts onto the helmet on phones. Instead these two constants describe
+// where the bat actually is as a fraction of the PHOTO itself (a fixed,
+// screen-size-independent ratio, tuned by eye against the desktop render),
+// and getImpactPoint() below replicates the real `contain`/`bottom`
+// letterboxing math at runtime to convert that into a viewport position for
+// whatever box size the current screen produces.
+const BATSMAN_IMAGE_ASPECT = 941 / 1672;
+const BAT_POINT_IN_IMAGE = { xRatio: 0.5555, yRatio: 0.4167 };
+
+function getImpactPoint(rigEl: HTMLElement) {
+  const box = rigEl.getBoundingClientRect();
+  const boxAspect = box.width / box.height;
+
+  let renderW: number;
+  let renderH: number;
+  if (BATSMAN_IMAGE_ASPECT > boxAspect) {
+    // Width-constrained: the box is proportionally narrower than the photo,
+    // so the photo fills the box's full width and leaves a gap above it
+    // (bg-bottom anchors it to the bottom).
+    renderW = box.width;
+    renderH = box.width / BATSMAN_IMAGE_ASPECT;
+  } else {
+    // Height-constrained: the box is proportionally wider than the photo,
+    // so the photo fills the box's full height and is centered horizontally.
+    renderH = box.height;
+    renderW = box.height * BATSMAN_IMAGE_ASPECT;
+  }
+
+  const imgLeft = box.left + (box.width - renderW) / 2;
+  const imgTop = box.top + (box.height - renderH);
+
+  return {
+    top: ((imgTop + BAT_POINT_IN_IMAGE.yRatio * renderH) / window.innerHeight) * 100,
+    left: ((imgLeft + BAT_POINT_IN_IMAGE.xRatio * renderW) / window.innerWidth) * 100,
+  };
+}
 
 const ballVariants: Variants = {
   idle: {
@@ -24,29 +65,6 @@ const ballVariants: Variants = {
     scale: 0.5,
     rotate: 0,
     filter: "blur(1px)",
-  },
-  delivery: {
-    top: IMPACT_POINT.top,
-    left: IMPACT_POINT.left,
-    x: "-50%",
-    y: "-50%",
-    opacity: 1,
-    scale: 1,
-    rotate: 620,
-    filter: "blur(0px)",
-    transition: { duration: 0.6, ease: [0.55, 0, 1, 0.45] },
-  },
-  shot: {
-    // Small directional kick away from the bat, toward where the "rocket"
-    // leg launches from — makes the ball visibly react to being struck
-    // instead of just swelling in place.
-    top: "54%",
-    left: "70%",
-    x: "-50%",
-    y: "-50%",
-    scale: 1.08,
-    rotate: 660,
-    transition: { duration: 0.22, ease: "easeOut" },
   },
   rocket: {
     top: "50%",
@@ -95,6 +113,24 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
   const ballControls = useAnimationControls();
   const { play, muted, toggleMute } = useSound();
   const triggeredRef = useRef(false);
+  const rigRef = useRef<HTMLDivElement>(null);
+  const impactRef = useRef({ top: 58, left: 75 }); // sane default before the first measurement
+
+  const measureImpact = useCallback(() => {
+    const el = rigRef.current;
+    if (!el) return;
+    impactRef.current = getImpactPoint(el);
+  }, []);
+
+  useEffect(() => {
+    measureImpact();
+    window.addEventListener("resize", measureImpact);
+    window.addEventListener("orientationchange", measureImpact);
+    return () => {
+      window.removeEventListener("resize", measureImpact);
+      window.removeEventListener("orientationchange", measureImpact);
+    };
+  }, [measureImpact]);
 
   // Sequenced imperatively (rather than via reactive `animate={phase}` +
   // onAnimationComplete chaining) because each leg of the delivery must
@@ -106,13 +142,39 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
     if (triggeredRef.current) return;
     triggeredRef.current = true;
 
+    // Re-measure right before playing — cheap, and guards against any
+    // layout shift between mount and the user actually pressing play.
+    measureImpact();
+    const { top: impactTop, left: impactLeft } = impactRef.current;
+
     play("whoosh");
     setPhase("delivery");
-    await ballControls.start("delivery");
+    await ballControls.start({
+      top: `${impactTop}%`,
+      left: `${impactLeft}%`,
+      x: "-50%",
+      y: "-50%",
+      opacity: 1,
+      scale: 1,
+      rotate: 620,
+      filter: "blur(0px)",
+      transition: { duration: 0.6, ease: [0.55, 0, 1, 0.45] },
+    });
 
     play("batHit");
     setPhase("shot");
-    await ballControls.start("shot");
+    await ballControls.start({
+      // Small directional kick away from the bat, toward where the "rocket"
+      // leg launches from — makes the ball visibly react to being struck
+      // instead of just swelling in place.
+      top: `${impactTop - 4}%`,
+      left: `${impactLeft - 5}%`,
+      x: "-50%",
+      y: "-50%",
+      scale: 1.08,
+      rotate: 660,
+      transition: { duration: 0.22, ease: "easeOut" },
+    });
 
     setPhase("rocket");
     await ballControls.start("rocket");
@@ -125,7 +187,7 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
       y: [0, 7, -6, 5, -3, 1, 0],
       transition: { duration: 0.5, ease: "easeOut" },
     });
-  }, [play, ballControls, shakeControls]);
+  }, [play, ballControls, shakeControls, measureImpact]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -168,7 +230,7 @@ export default function CricketCoverDriveIntro({ onComplete }: { onComplete: () 
         {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
       </button>
 
-      <BatsmanRig phase={phase} variants={batsmanVariants} swooshVariants={swooshVariants} />
+      <BatsmanRig phase={phase} variants={batsmanVariants} swooshVariants={swooshVariants} rigRef={rigRef} />
 
       <motion.div
         className="absolute z-20 h-11 w-11 rounded-full sm:h-14 sm:w-14"
@@ -218,13 +280,16 @@ function BatsmanRig({
   phase,
   variants,
   swooshVariants,
+  rigRef,
 }: {
   phase: Phase;
   variants: Variants;
   swooshVariants: Variants;
+  rigRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <motion.div
+      ref={rigRef}
       className="absolute bottom-0 right-[4%] z-10 h-[62%] w-[46%] max-w-[420px] sm:right-[10%] sm:h-[72%]"
       style={{ willChange: "transform" }}
       variants={variants}

@@ -14,9 +14,9 @@ export async function POST(request: Request) {
   const { name, purpose, phone, email, message } = body as Record<string, unknown>;
 
   if (
-    typeof name !== "string" || !name.trim() ||
+    typeof name !== "string" || !name.trim() || /\d/.test(name) ||
     typeof purpose !== "string" || !purpose.trim() ||
-    typeof phone !== "string" || !phone.trim() ||
+    typeof phone !== "string" || !/^[0-9+()\-\s]+$/.test(phone.trim()) ||
     typeof email !== "string" || !/^\S+@\S+\.\S+$/.test(email) ||
     typeof message !== "string" || !message.trim()
   ) {

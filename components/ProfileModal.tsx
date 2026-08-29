@@ -87,7 +87,7 @@ export default function ProfileModal({ onClose }: { onClose: () => void }) {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="grid grid-cols-[15px_1fr_15px] items-center gap-2 rounded border border-white/15 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/80 transition hover:border-scoreboard-amber hover:text-scoreboard-amber"
+              className="grid grid-cols-[15px_1fr_15px] items-center gap-2 rounded border border-white/15 px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/80 transition hover:border-scoreboard-amber hover:text-scoreboard-amber"
             >
               {/* Real brand logo from public/images/taglogo/. CSS background
                   degrades to an empty 15px slot if the file isn't in place yet,

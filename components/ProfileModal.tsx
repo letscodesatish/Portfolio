@@ -87,17 +87,20 @@ export default function ProfileModal({ onClose }: { onClose: () => void }) {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded border border-white/15 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/80 transition hover:border-scoreboard-amber hover:text-scoreboard-amber"
+              className="grid grid-cols-[15px_1fr_15px] items-center gap-2 rounded border border-white/15 py-2.5 font-mono text-xs font-bold uppercase tracking-wider text-white/80 transition hover:border-scoreboard-amber hover:text-scoreboard-amber"
             >
               {/* Real brand logo from public/images/taglogo/. CSS background
                   degrades to an empty 15px slot if the file isn't in place yet,
-                  instead of a broken-image icon. */}
+                  instead of a broken-image icon. The trailing empty spacer
+                  column (same width as the icon) balances the grid so the
+                  label stays centered on the button regardless of icon width. */}
               <span
                 className="h-[15px] w-[15px] shrink-0 bg-contain bg-center bg-no-repeat"
                 style={{ backgroundImage: `url('/images/taglogo/${social.icon}.png')` }}
                 aria-hidden="true"
               />
-              {social.label}
+              <span className="text-center">{social.label}</span>
+              <span aria-hidden="true" />
             </a>
           ))}
         </div>
